@@ -1,0 +1,3 @@
+from metodos import *
+
+menu()
