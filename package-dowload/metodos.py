@@ -3,22 +3,20 @@ from datetime import date
 import json
 import os
 
-
-def menu():
+#Funções de Menu e Organização
+def menu(agenda):
     data = date.today() #Reconhece a data atual
     ano = data.year
     mes = data.month
     dia = data.day
-    dia_semana = data.weekday()
-    agenda = {}
 
-    print(32*'-'+'AGENDA' + 32*'-')  #CRUD  
+    print(32*'-'+'AGENDA' + 32*'-')
 
-    print(calendar.month(ano, mes))
+    print(calendar.month(ano, mes)) #Imprime o Calendário do Mês 
     print("Hoje dia é", dia)
     print(32*'-')
 
-    while True:
+    while True: #CRUD
         print("1 - Adiconar Evento")
         print("2 - Remover Evento")
         print("3 - Listar Eventos Futuros")
@@ -33,22 +31,40 @@ def menu():
         elif opcao == 2:
             remover(agenda)
         elif opcao == 3:
-            listar(agenda)
+            agenda = listar(agenda)
+
+def ordenar(agenda):
+    temp = dict(sorted(agenda.items())) #Usa a função 'items' para criar uma lista de pares chave-valor, a função 'sorted' ordena usando Timsort e a função 'dict' transforma em dicionário novamente
+    return temp
+
+#Funções de Permanência de Dados
+
 
 def salvar(agenda):
-    with open("dados.json", "w", encoding="utf-8") as arquivo:
+    with open("dados.json", "w", encoding="utf-8") as arquivo: #Cria e salva os dados no arquivo JSON
         json.dump(agenda, arquivo, indent = 4)
         print("Salavando e Fechando...")
 
 def carregar_dados():
-    if os.path.exists("dados.json"):
+    if os.path.exists("dados.json"): #Carregando as informações do arquivo JSON caso exista
         with open("dados.json", "r") as arquivo:
             return json.load(arquivo)
     else:
-        return {}
+        return {}  
+
+
+#Funções do CRUD (Adicionar, Remover e Listar)
+
     
 def adicionar_evento(agenda):
-    dia = str(input("Quando será esse evento? *Em numeral* "))
+    dia = str(input("Quando será esse evento? *Em numeral* "))   
+    if not dia.isdigit(): #Confirindo se o algarismo digitado realmente é um número válido
+        print("\n[SISTEMA] Por favor, digite uma data válida.\n")
+    elif int(dia) <= 0 or int(dia) > 31:
+        print("\n[SISTEMA] Dia Inexistente.\n")
+        adicionar_evento(agenda)
+
+
     titulo = str(input("Digite o título do evento: ")).capitalize()
     comeco = str(input("Que horas começa? 00:00 "))
     final = str(input("Que horas termina? 00:00 "))
@@ -58,10 +74,10 @@ def adicionar_evento(agenda):
     print("\nEvento Adicionado\n")
 
 def remover(agenda):
-    if not agenda:
+    if not agenda: #Verificando se à agenda não esta vazia
         print("\nA agenda esta vazia\n")
     
-    dia = int(input("Qual o dia do vento que você deseja remover? *Em numeral* "))
+    dia = input("Qual o dia do vento que você deseja remover? *Em numeral* ")
     if dia in agenda:
         agenda.pop(dia)
         print("Evento deletado.")
@@ -69,13 +85,17 @@ def remover(agenda):
         print("\nA agenda esta vazia\n")
 
 def listar(agenda):
+    agenda = ordenar(agenda)
+
     print("\n"+32*"-")
     print("1 - Listar próximos eventos\n2 - Eventos de um dia específico\n")
     escolha = int(input("Selecione uma opção:  "))
+
     if escolha == 1:
-        for dia in agenda:
-            if agenda[dia] is not None:
+        for dia in agenda: #Verificando se à agenda não esta vazia
+            if agenda[dia] is not None: #Verificando se o dia apresenta evento
                 print(f"\n{agenda[dia][0]}:\nDia {dia} // {agenda[dia][1]} - {agenda[dia][2]}\n{agenda[dia][3]}\n")
             else:
                 print(f"\nNão a eventos para o dia {dia}\n")
                 break
+    return agenda

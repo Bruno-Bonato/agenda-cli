@@ -1,3 +1,4 @@
 from metodos import *
 
-menu()
+agenda = carregar_dados()
+menu(agenda)
