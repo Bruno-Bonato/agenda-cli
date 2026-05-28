@@ -1,8 +1,11 @@
+from rich import print
+from rich.console import Console
 import calendar
 from datetime import date
 import json
 import os
 
+console = Console()
 #Funções de verificação
 
 
@@ -12,13 +15,18 @@ def mes_extenso(mes):
 
 def verificar_dia(dia,agenda):
     if not dia.isdigit() or int(dia) <= 0 or int(dia) > 31: #Confirindo se o algarismo digitado realmente é um número válido
-        print("\n[SISTEMA] Por favor, digite uma data válida.\n")
+        print("\n[red][SISTEMA] Por favor, digite uma data válida.\n")
         menu(agenda)
 
 def verificar_mes(mes,agenda):
     if mes < 1 or mes > 12: #Confere se o alggorismo digitado realmente é um número válido
-        print("\n[SISTEMA] Por favor, digite uma data válida.\n")
+        print("\n[red][SISTEMA] Por favor, digite uma data válida.\n")
         menu(agenda)
+
+def verificar_agenda(agenda): #Veifica se a agenda esta vazia
+    if sum(len(agenda[mes]) for mes in agenda) == 0:
+        print("\n[red][SISTEMA] A agenda está vazia.\n")
+        return False
 
 
 #Funções de Menu e Organização
@@ -36,11 +44,11 @@ def menu(agenda):
     print(32*'-')
 
     while True: #CRUD
-        print("1 - Adiconar Evento")
-        print("2 - Remover Evento")
-        print("3 - Listar Eventos Futuros")
-        print("4 - Sair")
-        opcao = int(input("\nSelecione uma opção: "))
+        print("[blue cyan]1 - Adiconar Evento")
+        print("[blue cyan]2 - Remover Evento")
+        print("[blue cyan]3 - Listar Eventos Futuros")
+        print("[blue cyan]4 - Sair")
+        opcao = int(console.input("\n[blink]Selecione uma opção: "))
         
         if opcao == 4:
             salvar(agenda)
@@ -65,7 +73,7 @@ def ordenar(agenda):
 def salvar(agenda):
     with open("dados.json", "w", encoding="utf-8") as arquivo: #Cria e salva os dados no arquivo JSON
         json.dump(agenda, arquivo, indent = 4)
-        print("Salavando e Fechando...")
+        print("\n[green]Salavando e Fechando...\n")
 
 def carregar_dados():
     if os.path.exists("dados.json"): #Carregando as informações do arquivo JSON caso exista
@@ -92,48 +100,60 @@ def carregar_dados():
 
     
 def adicionar_evento(agenda):
-    dia = str(input("Quando será esse evento? *Em numeral* "))
+    dia = str(console.input("[blue cyan]Qual é o dia desse evento? *Em numeral* "))
     verificar_dia(dia,agenda)
 
-    mes = int(input("Qual será o mês? *Em numeral* "))
+    mes = int(console.input("[blue cyan]Qual será o mês? *Em numeral* "))
     verificar_mes(mes,agenda)
     mes = mes_extenso(mes) #Transforma mês por extenso
 
-    titulo = str(input("Digite o título do evento: ")).capitalize()
-    comeco = str(input("Que horas começa? 00:00 "))
-    final = str(input("Que horas termina? 00:00 "))
-    descricao = str(input("Descição do Evento: ")).capitalize()
+    titulo = str(console.input("[blue cyan]Digite o título do evento: ")).capitalize()
+    comeco = str(console.input("[blue cyan]Que horas começa? 00:00 "))
+    final = str(console.input("[blue cyan]Que horas termina? 00:00 "))
+    descricao = str(console.input("[blue cyan]Descição do Evento: ")).capitalize()
 
-    agenda[mes][dia] = [titulo, comeco, final, descricao]
-    print("\nEvento Adicionado\n")
+    agenda[mes][dia] = [[titulo, comeco, final, descricao]]
+    print("\n[green]Evento Adicionado\n")
 
 def remover(agenda):
-    if not agenda: #Verificando se à agenda não esta vazia
-        print("\nA agenda esta vazia\n")
+    verificar_agenda(agenda)
     
-    dia = input("Qual o dia do vento que você deseja remover? *Em numeral* ")
+    dia = console.input("[blue cyan]Qual o dia do vento que você deseja remover? *Em numeral* ")
     verificar_dia(dia,agenda)
-    mes = int(input("Qual o mês do evento? *em numeral* "))
+    mes = int(console.input("[blue cyan]Qual o mês do evento? *em numeral* "))
     verificar_mes(mes,agenda)
     mes = mes_extenso(mes) #Transforma mês por extenso
 
     if dia in agenda[mes]:
-        agenda[mes].pop(dia)
-        print("Evento deletado.")
+        if len(agenda[mes][dia]) == 1: #Verifica se Há apenas um evento
+            agenda[mes].pop(dia)
+            print("\n[green][SISTEMA] Evento deletado.\n")
+        else:
+            titulo = str(console.input("[blue cyan]Qual o título do evento que deseja remove? ")).capitalize() #Pegunta o título do evento para o usuário
+            for evento in agenda[mes][dia]: #Procura pelo evento e o remove, sem altera o resto dos eventos do dia.
+                if evento[0] == titulo:
+                    agenda[mes][dia].pop[evento]
+                    break
+            print("\n[green][SISTEMA] Evento deletado.\n")
     else:
-        print("\n[SISTEMA] Não há evento nesta data\n")
+        print("\n[red][SISTEMA] Não há evento nesta data\n")
 
 def listar(agenda):
+    if not verificar_agenda(agenda):
+        menu(agenda)
+
     agenda = ordenar(agenda)
 
     print("\n"+32*"-")
-    print("1 - Listar próximos eventos\n2 - Eventos de um dia específico\n")
-    escolha = int(input("Selecione uma opção:  "))
+    print("[blue cyan]1 - Listar próximos eventos\n[blue cyan]2 - Eventos de um dia específico\n")
+    escolha = int(console.input("[blink]Selecione uma opção:  "))
 
     if escolha == 1:
-        for mes in agenda: 
-            if agenda[mes] is not None: #Verificando se o mês não esta vazio
-                for dia in agenda[mes]: 
-                    if dia is not None: #Verifica se o dia não esta vazio
-                        print(f"\n{agenda[mes][dia][0]}:\nDia {dia} de {mes} // {agenda[mes][dia][1]} - {agenda[mes][dia][2]}\nDescrição: {agenda[mes][dia][3]}\n")
+        if len(agenda) > 12: #Verifica se a agenda ta fazia  Obs: A agenda vazia tem 12 itens
+            for mes in agenda: 
+                if agenda[mes] is not None: #Verificando se o mês não esta vazio
+                    for dia in agenda[mes]: 
+                        if dia is not None: #Verifica se o dia não esta vazio
+                            for evento in agenda[mes][dia]:
+                                print(f"\n{evento[0]}:\nDia {dia} de {mes} // {evento[1]} - {evento[2]}\nDescrição: {evento[3]}\n")
     return agenda #Devolde a agenda ordena para a main
