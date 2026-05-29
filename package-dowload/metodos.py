@@ -12,6 +12,8 @@ console = Console()
 
 def verificar_hora(hora):  # Verifica se a hora informada é válida
     try:
+        if hora == "":
+            return True
         datetime.strptime(hora, "%H:%M").time()
     except ValueError:
         print("\n[red][SISTEMA] Digite uma hora válida.\n")
@@ -26,30 +28,34 @@ def verifica_titulo(agenda, mes, dia, titulo):
             return True
     return False
 
+
 def mes_extenso(mes):
     meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
              "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
     return meses[mes-1]
 
-def verifica_existencia_dia(agenda,dia,mes): #Verifica se já existe lista para um dia específico
-    if dia not in agenda[mes]:
-        return True
-    else:
-        return False
-        
 
-def verificar_dia(dia, agenda):
+def existencia_dia(agenda, dia, mes):  # Verifica se já existe lista para um dia específico
+    if dia not in agenda[mes]:
+        return False
+    else:
+        return True
+
+
+def verificar_dia(dia):
     # Confirindo se o algarismo digitado realmente é um número válido
     if not dia.isdigit() or int(dia) <= 0 or int(dia) > 31:
         print("\n[red][SISTEMA] Por favor, digite uma data válida.\n")
         return False
+    else: return True
 
 
-def verificar_mes(mes, agenda):
+def verificar_mes(mes):
     if mes < 1 or mes > 12:  # Confere se o alggorismo digitado realmente é um número válido
         print("\n[red][SISTEMA] Por favor, digite uma data válida.\n")
         return False
-
+    else:
+        return True
 
 def verificar_agenda(agenda):  # Veifica se a agenda esta vazia
     if sum(len(agenda[mes]) for mes in agenda) == 0:
@@ -59,6 +65,7 @@ def verificar_agenda(agenda):  # Veifica se a agenda esta vazia
         return True
 
 # Funções de Menu e Organização
+
 
 def menu(agenda):
     data = date.today()  # Reconhece a data atual
@@ -75,24 +82,29 @@ def menu(agenda):
     while True:  # CRUD
         print("[blue cyan]1 - Adiconar Evento")
         print("[blue cyan]2 - Remover Evento")
-        print("[blue cyan]3 - Listar Eventos Futuros")
-        print("[blue cyan]4 - Sair")
+        print("[blue cyan]3 - Listar Eventos")
+        print("[blue cyan]4 - Editar Eventos")
+        print("[blue cyan]5 - Salva")
+        print("[blue cyan]6 - Salva e Sair")
         try:
             opcao = int(console.input(
                 "\n[blink]Selecione uma opção: *em numeral* "))
         except ValueError:
             print("\n[red][SISTEMA] Digite um número válido.\n")
-            menu(agenda)
-
-        if opcao == 4:
-            salvar(agenda)
             break
-        elif opcao == 1:
+
+        if opcao == 1:
             adicionar_evento(agenda)
         elif opcao == 2:
             remover(agenda)
         elif opcao == 3:
             agenda = listar(agenda)
+        elif opcao == 4:
+            agenda = editar(agenda)
+        elif opcao == 5:
+            salvar(agenda)
+        elif opcao == 6:
+            salvar(agenda)
         else:
             print("\n[red][SISTEMA] Digite uma opção válida.\n")
 
@@ -112,7 +124,7 @@ def salvar(agenda):
     # Cria e salva os dados no arquivo JSON
     with open("dados.json", "w", encoding="utf-8") as arquivo:
         json.dump(agenda, arquivo, indent=4)
-        print("\n[green]Salavando e Fechando...\n")
+        print("\n[green]Salavando....\n")
 
 
 def carregar_dados():
@@ -143,14 +155,13 @@ def carregar_dados():
 def adicionar_evento(agenda):
     dia = str(console.input(
         "\n[blue cyan]Qual é o dia desse evento? *Em numeral* "))
-    verificar_dia(dia, agenda)
+    verificar_dia(dia)
 
     mes = int(console.input("[blue cyan]Qual será o mês? *Em numeral* "))
-    verificar_mes(mes, agenda)
+    verificar_mes(mes)
     mes = mes_extenso(mes)  # Transforma mês por extenso
 
-    titulo = str(console.input(
-        "[blue cyan]Digite o título do evento: *ENTER para pular* ")).capitalize()
+    titulo = str(console.input("[blue cyan]Digite o título do evento: *ENTER para pular* ")).capitalize()
     comeco = str(console.input("[blue cyan]Que horas começa? 00:00 "))
     verificar_hora(comeco)
 
@@ -160,7 +171,8 @@ def adicionar_evento(agenda):
     descricao = str(console.input(
         "[blue cyan]Descição do Evento: *ENTER para pular* ")).capitalize()
 
-    if verifica_existencia_dia(agenda,dia,mes): #Checa se ja há eventos no dia, se não, ele cria a lista para armazenar
+    # Checa se ja há eventos no dia, se não, ele cria a lista para armazenar
+    if not existencia_dia(agenda, dia, mes):
         agenda[mes][dia] = []
         agenda[mes][dia].append([titulo, comeco, final, descricao])
     else:
@@ -174,9 +186,9 @@ def remover(agenda):
 
     dia = console.input(
         "[blue cyan]Qual o dia do vento que você deseja remover? *Em numeral* ")
-    verificar_dia(dia, agenda)
+    verificar_dia(dia)
     mes = int(console.input("[blue cyan]Qual o mês do evento? *em numeral* "))
-    verificar_mes(mes, agenda)
+    verificar_mes(mes)
     mes = mes_extenso(mes)  # Transforma mês por extenso
 
     if dia in agenda[mes]:
@@ -202,19 +214,75 @@ def remover(agenda):
 
 
 def listar(agenda):
-    agenda = ordenar(agenda)
+    if not verificar_agenda(agenda):
+        return agenda
+    else:
+        agenda = ordenar(agenda)
 
-    print("\n"+32*"-")
-    print("[blue cyan]1 - Listar próximos eventos\n[blue cyan]2 - Eventos de um dia específico\n")
-    escolha = int(console.input("[blink]Selecione uma opção:  "))
+        print("\n"+32*"-")
+        print(
+            "[blue cyan]1 - Listar próximos eventos\n[blue cyan]2 - Eventos de um dia específico\n")
+        try:
+            escolha = int(console.input("[blink]Selecione uma opção:  "))
+        except ValueError:
+            print("\n[red][SISTEMA] Digite um número válido.\n")
+            return agenda
 
-    if escolha == 1:
-        if verificar_agenda(agenda):  # Verifica se a agenda ta fazia  Obs: A agenda vazia tem 12 itens
+        if escolha == 1:
             for mes in agenda:
                 if agenda[mes]:  # Verificando se o mês não esta vazio
                     for dia in agenda[mes]:
                         if agenda[mes][dia]:  # Verifica se o dia não esta vazio
                             for evento in agenda[mes][dia]:
                                 print(f"\n{evento[0]}:\nDia {dia} de {mes} // {evento[1]} - {evento[2]}\nDescrição: {evento[3]}\n")
+        elif escolha == 2:
+            dia = console.input("[blue cyan]Qual o dia do evento que você deseja listar? *Em numeral* ")
+            verificar_dia(dia)
+            mes = int(console.input("[blue cyan]Qual o mês do evento que você deseja listar? *Em numeral* "))
+            verificar_mes(mes)
+            mes = mes_extenso(mes)
 
-    return agenda  # Devolde a agenda ordena para a main
+            # Veifica a existência de um dia específico e o imprimi caso exista
+            if existencia_dia(agenda, dia, mes):
+                for evento in agenda[mes][dia]:
+                    print( f"\n{evento[0]}:\nDia {dia} de {mes} // {evento[1]} - {evento[2]}\nDescrição: {evento[3]}\n")
+            else:
+                print("\n[red][SISTEMA] Digite uma opção válida.\n")
+        else:
+            return agenda
+        return agenda  # Devolde a agenda ordena para a main
+
+def editar(agenda):
+    dia = console.input("\n[blue cyan]Qual o dia do evento que você deseja editar? *Em numeral* ")
+    if not verificar_dia(dia):
+        return
+    mes = int(console.input("[blue cyan]Qual o mês do eventro que você deseja editar? *Em numeral* "))
+    if not verificar_mes:
+        return
+    mes = mes_extenso (mes)
+    titulo = console.input("[blue cyan]Qual o título do evento que você deseja editar? *Em numeral* ").capitalize()
+    for evento in agenda[mes][dia]:
+        if evento[0] == titulo:
+            print("\n[white]*Se desejar manter alguma infomação apenas aperte ENTER*\n")
+
+            novo_titulo = str(console.input("[blue cyan]Digite o título do evento: ")).capitalize() #Mesmo bloco da função adição
+            novo_comeco = str(console.input("[blue cyan]Que horas começa? 00:00 "))
+            verificar_hora(novo_comeco)
+            novo_final = str(console.input("[blue cyan]Que horas termina? 00:00 "))
+            verificar_hora(novo_final)
+            nova_descricao = str(console.input( "[blue cyan]Descição do Evento: ")).capitalize()
+
+            if novo_titulo != "": #Checa se o usuário não deu ENTER
+                evento[0] = novo_titulo
+            if novo_comeco != "":
+                evento[1] = novo_comeco
+            if novo_final != "":
+                evento[2] = novo_final
+            if nova_descricao != "":
+                evento[3] = nova_descricao
+        
+            print("\n[green][SISTEMA] Evento editado\n")
+            break
+        else:
+            print("\n[red][SISTEMA] O evento não existe ou foi removido.\n")
+    return agenda
